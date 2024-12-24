@@ -1,0 +1,35 @@
+name: payload-dumper
+on:
+  workflow_dispatch:
+    inputs:
+      URL:
+        description: 'URL of the zip archive containing payload.bin (e.g. OTA update URL)'
+        required: true
+        type: string
+      partitions:
+        description: 'Enter partition (e.g. boot). If you need to dump multiple partitions, please separate them with commas (e.g. boot,dtbo,vendor).'
+        required: false
+        type: string
+jobs:
+  payload-dumper:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Setup environment
+        run: |
+          sudo apt-get install python3
+          pip install git+https://github.com/5ec1cff/payload-dumper
+
+      - name: Start dump
+        run: |
+          if [[ -z "${{ inputs.partitions }}" ]]; then
+            payload_dumper "${{ inputs.URL }}"
+          else
+            payload_dumper --partitions ${{ inputs.partitions }} "${{ inputs.URL }}"
+          fi
+          ls -lh output/
+
+      - name: Upload dumped files
+        uses: actions/upload-artifact@v4
+        with:
+          name: output
+          path: output/*.img
